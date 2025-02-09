@@ -27,7 +27,7 @@ struct per_session_data__minimal {
 	struct per_session_data__minimal *pss_list;
 	// pointer to the websocket
 	struct lws *wsi;
-	int last; /* the last message number we sent */
+	//int last; /* the last message number we sent */
 };
 
 /* each vhost has one struct, a vhost is a set of protocols and connections to a particular network interface 
@@ -41,7 +41,7 @@ struct per_vhost_data__minimal {
 	struct per_session_data__minimal *pss_list;
 
 	struct msg amsg; /* the one pending message... */
-	int current; /* the current message number we are caching */
+	//int current; /* the current message number we are caching */
 };
 
 
@@ -59,26 +59,58 @@ static int callback_websocket(struct lws *wsi, enum lws_callback_reasons reason,
 	switch (reason) {
 	// When the protocol is initialized (only once)
 	case LWS_CALLBACK_PROTOCOL_INIT:
-		
+		printf("Protocol initialized\n");
+		// allocate memory for the vhost data (vhd) for the first time and store data in it (context, vhost, protocol)
+		vhd = (struct per_vhost_data__minimal* )lws_protocol_vh_priv_zalloc(lws_get_vhost(wsi), lws_get_protocol(wsi), sizeof(struct per_vhost_data__minimal));
+		vhd->context = lws_get_context(wsi);
+		vhd->vhost = lws_get_vhost(wsi);
+		vhd->protocol = lws_get_protocol(wsi);
 		break;
 
+	// When one client connects, we modify the user data (in this case is a struct per_session_data__minimal each time 
 	case LWS_CALLBACK_ESTABLISHED:
 		printf("Connection established\n");
 		
+	   	// add the new pss to the linked-list, is equivalent to:
+		// pss->pss_list = vhd->pss_list;
+		// vhd->pss_list = pss;
+		lws_ll_fwd_insert(pss, pss_list, vhd->pss_list);
+		
+		// store the websocket pointer in the user data
+		pss->wsi = wsi;
+			
 		break;
 
 	case LWS_CALLBACK_CLOSED:
+		printf("Connection closed\n");
+		// remove the pss from the linked-list
+		// is equivalent to:
+		// pss->pss_list = pss->pss_list->pss_list;
+		// vhd->pss_list = pss;
+		lws_ll_fwd_remove(struct per_session_data__minimal, pss_list, pss, vhd->pss_list);
 		break;
 
 	case LWS_CALLBACK_SERVER_WRITEABLE:
-		
+		printf("Server writeable\n");
+
 		break;
 
-	case LWS_CALLBACK_RECEIVE:
-		printf("Received data");
-		
+	// Adding { } to the case LWS_CALLBACK_RECEIVE: is important to avoid the error: "jump to case label"
+	// This error is caused by the declaration of variables inside the case (in this case, the variable msg)
+	// By adding this the declared variables will be local to the case
+	case LWS_CALLBACK_RECEIVE:{
+		printf("Received message\n");
+		unsigned char *data = (unsigned char *)in;
+		size_t data_len = len;
+		char *msg = (char*)malloc(data_len + 1);
+		if (!msg)
+			return -1;
+		memcpy(msg, data, data_len);
+		msg[data_len] = '\0';
+		printf("Mensaje recibido: %s\n", msg);
+		free(msg);
 		break;
-
+	}
 	default:
 		break;
 	}
@@ -92,7 +124,7 @@ static struct lws_protocols protocols[] = {
         //"websocket",
         "ocpp1.6",
         callback_websocket,
-        0,
+        sizeof(struct per_session_data__minimal),
         128,
     },
     { NULL, NULL, 0, 0 } /* Terminador */
