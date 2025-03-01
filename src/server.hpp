@@ -37,7 +37,7 @@ private:
 	struct lws *wsi;
 	static struct lws_protocols protocols[];
 	static int lwscallback(struct lws* wsi, enum lws_callback_reasons reason, void* user, void* in, size_t len);
-	int process_message(char* message, size_t len);
+	int process_message(char* message, size_t len, struct per_session_data__minimal* pss);
 
 	void init_handlers();
 

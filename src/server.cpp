@@ -18,12 +18,13 @@ OCPPServer::OCPPServer(int port, std::string path) {
 }
 
 void OCPPServer::init_handlers() {
-	this->handlers["BootNotification"] = [this](const std::string& msg) {
+	this->handlers["BootNotification"] = [this](const std::string& msg) -> std::string { 			// the lambda function captures the this pointer (OCPPServer object) and spects a string as argument
+																		  							// the lambda function returns a string
 		std::cout << "BootNotification" << std::endl;
 		std::string response;
-		auto it = this->user_callbacks.find("BootNotification");
-		if (it != this->user_callbacks.end()) {
-			response = it->second(msg);
+		auto it = this->user_callbacks.find("BootNotification");									// find is a method of the map class that returns an iterator (it) to the element if it is found
+		if (it != this->user_callbacks.end()) {														// when it is == to end() it means that the element was not found because it is the last element (end of the map)
+			response = it->second(msg);																// it->second is the value of the element in the map (in this case the lambda user callback)
 		} else {
 			std::cout << "User callback not found" << std::endl;
 		}
@@ -41,6 +42,7 @@ OCPPServer::~OCPPServer() {
 
 struct OCPPServer::per_session_data__minimal {
 	struct lws *wsi;
+	std::vector<std::string> messages;
 
 	// pointer to the next pss
 	struct per_session_data__minimal *pss_list;
@@ -93,7 +95,17 @@ int OCPPServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reason,
 
 	case LWS_CALLBACK_SERVER_WRITEABLE:
 		printf("Server writeable\n");
-
+		if (pss->messages.size() > 0) {
+			std::string message = pss->messages.back(); // get the last message
+			pss->messages.pop_back(); // remove the last message
+			unsigned char *buf = (unsigned char *)malloc(LWS_SEND_BUFFER_PRE_PADDING + strlen(message.c_str()) + LWS_SEND_BUFFER_POST_PADDING);
+			if (!buf) {
+				return -1;
+			}
+			memcpy(buf + LWS_SEND_BUFFER_PRE_PADDING, message.c_str(), strlen(message.c_str()));
+			m = lws_write(wsi, buf + LWS_SEND_BUFFER_PRE_PADDING, strlen(message.c_str()), LWS_WRITE_TEXT);
+			free(buf);
+		}
 		break;
 
 	case LWS_CALLBACK_RECEIVE:{
@@ -106,8 +118,8 @@ int OCPPServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reason,
 		memcpy(msg, data, data_len);
 		msg[data_len] = '\0';
 		printf("Mensaje recibido: %s\n", msg);
-		// process the message
-		if (server->process_message(msg, data_len) != 0) {
+		// process the message, send also per_session_data__minimal to access the user data and wsi
+		if (server->process_message(msg, data_len, pss) != 0) {
 			printf("Error processing message\n");
 		}
 		free(msg);
@@ -167,7 +179,7 @@ struct OCPPServer::message_request {
     std::string response;
 };
 
-int OCPPServer::process_message(char* message, size_t len) {
+int OCPPServer::process_message(char* message, size_t len, struct per_session_data__minimal *pss) {
 	json ocpp_message;
 	try {
 		ocpp_message = json::parse(message);
@@ -194,7 +206,9 @@ int OCPPServer::process_message(char* message, size_t len) {
 			return 1;
 		} else {
 			std::cout << "Response: " << response << std::endl;
-			// TBD: send the response to the client
+			// if there is a response add it to the messages vector of the pss and call lws_callback_on_writable to send the message
+			pss->messages.push_back(response);
+			lws_callback_on_writable(pss->wsi);
 		}
 	} else {
 		std::cerr << "Error: message type not found" << std::endl;
