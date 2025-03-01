@@ -156,7 +156,8 @@ int main() {
     }	
 
     while (n >= 0 && !interrupted) {
-        n = lws_service(context, 1000);  // Putting 0 means that it will not wait for any event. 1000 means 1 second
+        n = lws_service(context, 0);  // Putting 0 means that it will not wait for any event. 1000 means 1 second
+		printf("n: %d\n", n);
     }
 
     std::cout << "Exiting..." << std::endl;
