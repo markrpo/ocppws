@@ -1,11 +1,10 @@
 #include <libwebsockets.h>
-#include <string>
 #include <vector>
 // map
 #include <map> 
 #include <functional>
 
-#include <nlohmann/json.hpp>
+#include "responses.hpp"
 
 using json = nlohmann::json;
 
@@ -19,6 +18,7 @@ public:
 	~OCPPServer();
 
 	using UserCallback = std::function<json(const std::string&)>; 			// using is a keyword to create an alias (like typedef)
+	// UserCallback is a function that takes a string and returns a json object (for future we will use Response::userdata)
 	using Handler = std::function<std::string(json&)>; 
 
 	void add_user_callback(std::string key, UserCallback callback);

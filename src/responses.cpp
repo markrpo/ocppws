@@ -26,3 +26,4 @@ json Responses::StatusNotificationResponse() {
 	json response;
 	return response;
 }
+

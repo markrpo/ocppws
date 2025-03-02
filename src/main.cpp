@@ -1,7 +1,5 @@
 #include "server.hpp"
-#include "responses.hpp"
-// to get utc time
-#include <iostream>
+#include <iostream>  
 
 int main() {
 	std::string path = "/";
