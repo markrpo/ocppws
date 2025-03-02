@@ -2,10 +2,9 @@
 #include <cstring>
 #include <csignal>
 
-// include json nlohmann
-#include <nlohmann/json.hpp>
-
 #include "server.hpp"
+
+#include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
 
@@ -14,21 +13,76 @@ OCPPServer::OCPPServer(int port, std::string path) {
     this->path = path;
 
 	this->init_handlers();	
-
 }
 
 void OCPPServer::init_handlers() {
-	this->handlers["BootNotification"] = [this](const std::string& msg) -> std::string { 			// the lambda function captures the this pointer (OCPPServer object) and spects a string as argument
-																		  							// the lambda function returns a string
-		std::cout << "BootNotification" << std::endl;
-		std::string response;
-		auto it = this->user_callbacks.find("BootNotification");									// find is a method of the map class that returns an iterator (it) to the element if it is found
-		if (it != this->user_callbacks.end()) {														// when it is == to end() it means that the element was not found because it is the last element (end of the map)
-			response = it->second(msg);																// it->second is the value of the element in the map (in this case the lambda user callback)
+	this->handlers["BootNotification"] = [this](json& msg) -> std::string { 			// the lambda function captures the this pointer (OCPPServer object) and spects a json object as argument (returns a string)
+		json callback_response;
+		json response_json;
+		std::string id = msg[1];
+
+		auto it = this->user_callbacks.find("BootNotification");													// find is a method of the map class that returns an iterator (it) to the element if it is found
+		if (it != this->user_callbacks.end()) {																		// when it is == to end() it means that the element was not found because it is the last element (end of the map)
+			
+			callback_response = it->second(msg.dump());																// it->second is the value of the element in the map (in this case the lambda user callback)
+			std::cout << "Callback response: " << callback_response.dump() << std::endl;
+			response_json = { 3, id, callback_response };
+			std::cout << "Full response: " << response_json.dump() << std::endl;
+
 		} else {
+
 			std::cout << "User callback not found" << std::endl;
+
 		}
-		return response;
+		return response_json.dump();
+	};
+
+	this->handlers["StatusNotification"] = [this](json& msg) -> std::string {
+		json callback_response;
+		json response_json;
+		std::string id = msg[1];
+
+		auto it = this->user_callbacks.find("StatusNotification");
+		if (it != this->user_callbacks.end()) {
+			
+			callback_response = it->second(msg.dump());
+			if (callback_response.empty()) {
+				std::cout << "Empty response" << std::endl;
+				response_json = { 3, id, json::object() };
+				std::cout << "Full response: " << response_json.dump() << std::endl;
+			} else {
+				std::cout << "Callback response: " << callback_response.dump() << std::endl;
+				response_json = { 3, id, callback_response };
+				std::cout << "Full response: " << response_json.dump() << std::endl;
+			}
+
+		} else {
+
+			std::cout << "User callback not found" << std::endl;
+
+		}
+		return response_json.dump();
+	};
+	
+	this->handlers["Heartbeat"] = [this](json& msg) -> std::string {
+		json callback_response;
+		json response_json;
+		std::string id = msg[1];
+
+		auto it = this->user_callbacks.find("Heartbeat");
+		if (it != this->user_callbacks.end()) {
+			
+			callback_response = it->second(msg.dump());
+			std::cout << "Callback response: " << callback_response.dump() << std::endl;
+			response_json = { 3, id, callback_response };
+			std::cout << "Full response: " << response_json.dump() << std::endl;
+
+		} else {
+
+			std::cout << "User callback not found" << std::endl;
+
+		}
+		return response_json.dump();
 	};
 }
 
@@ -43,6 +97,8 @@ OCPPServer::~OCPPServer() {
 struct OCPPServer::per_session_data__minimal {
 	struct lws *wsi;
 	std::vector<std::string> messages;
+
+	std::string buffer;
 
 	// pointer to the next pss
 	struct per_session_data__minimal *pss_list;
@@ -112,17 +168,14 @@ int OCPPServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reason,
 		printf("Received message\n");
 		unsigned char *data = (unsigned char *)in;
 		size_t data_len = len;
-		char *msg = (char*)malloc(data_len + 1);
-		if (!msg)
-			return -1;
-		memcpy(msg, data, data_len);
-		msg[data_len] = '\0';
-		printf("Mensaje recibido: %s\n", msg);
-		// process the message, send also per_session_data__minimal to access the user data and wsi
-		if (server->process_message(msg, data_len, pss) != 0) {
-			printf("Error processing message\n");
+		pss->buffer.append((char *)data, data_len);
+		if (lws_is_final_fragment(wsi)) {
+			if (server->process_message(pss->buffer, data_len, pss) != 0) {
+				printf("Error processing message\n");
+			} else {
+				pss->buffer.clear();
+			}
 		}
-		free(msg);
 		break;
 	}
 	default:
@@ -179,7 +232,7 @@ struct OCPPServer::message_request {
     std::string response;
 };
 
-int OCPPServer::process_message(char* message, size_t len, struct per_session_data__minimal *pss) {
+int OCPPServer::process_message(std::string& message, size_t len, struct per_session_data__minimal *pss) {
 	json ocpp_message;
 	try {
 		ocpp_message = json::parse(message);
@@ -198,9 +251,7 @@ int OCPPServer::process_message(char* message, size_t len, struct per_session_da
 
 	auto it = this->handlers.find(message_type);
 	if (it != this->handlers.end()) {
-		// to change from char* to std::string we need to use the constructor
-		std::string str_message(message);
-		std::string response = it->second(str_message);
+		std::string response = it->second(ocpp_message);
 		if (response.empty()) {
 			std::cout << "No response" << std::endl;
 			return 1;

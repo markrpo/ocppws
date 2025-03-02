@@ -1,11 +1,16 @@
 #include <libwebsockets.h>
-#include <iostream>
 #include <string>
 #include <vector>
 // map
 #include <map> 
 #include <functional>
-#include <memory>
+
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
+#ifndef OCPPSERVER_HPP
+#define OCPPSERVER_HPP
 
 class OCPPServer {
 	
@@ -13,8 +18,8 @@ public:
 	OCPPServer(int port, std::string path);
 	~OCPPServer();
 
-	using UserCallback = std::function<std::string(const std::string&)>; 			// using is a keyword to create an alias (like typedef)
-	using Handler = std::function<std::string(const std::string&)>;
+	using UserCallback = std::function<json(const std::string&)>; 			// using is a keyword to create an alias (like typedef)
+	using Handler = std::function<std::string(json&)>; 
 
 	void add_user_callback(std::string key, UserCallback callback);
 
@@ -37,7 +42,7 @@ private:
 	struct lws *wsi;
 	static struct lws_protocols protocols[];
 	static int lwscallback(struct lws* wsi, enum lws_callback_reasons reason, void* user, void* in, size_t len);
-	int process_message(char* message, size_t len, struct per_session_data__minimal* pss);
+	int process_message(std::string& message, size_t len, struct per_session_data__minimal* pss);
 
 	void init_handlers();
 
@@ -46,3 +51,5 @@ private:
 
 
 };
+
+#endif
