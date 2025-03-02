@@ -126,7 +126,7 @@ int main() {
     memset(&client_info, 0, sizeof(client_info));
     client_info.context = context;
     client_info.address = "localhost";
-    client_info.port = 18080;
+    client_info.port = 9000;
     client_info.path = "/ocpp/charger1";
     client_info.host = client_info.address;
     client_info.origin = client_info.address;
