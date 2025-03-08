@@ -10,29 +10,13 @@ WebSocketServer::WebSocketServer(int port, std::string path) {
     this->path = path;
 }
 
-struct WebSocketServer::per_vhost_data__minimal {
-	struct lws_context *context;
-	struct lws_vhost *vhost;
-	const struct lws_protocols *protocol;
-
-	struct per_session_data__minimal *pss_list;
-};
-
-struct WebSocketServer::per_session_data__minimal {
-	struct lws *wsi;
-	std::string buffer;
-	std::vector<std::string> messages;
-
-	struct per_session_data__minimal *pss_list;
-};
-
 int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reason,
 			void *user, void *in, size_t len)
 {
 	// when establishing a connection pss is created. Each time a callback is called pss will point to the user data
-	struct per_session_data__minimal *pss =	(struct per_session_data__minimal *)user;
+	struct WebSocketServer::per_session_data__minimal *pss =	(struct WebSocketServer::per_session_data__minimal *)user;
 	// lws_protocol_vh_priv_zalloc() is used to allocate memory for the vhost data based on the size of the struct we pass (in this case per_vhost_data__minimal)
-	struct per_vhost_data__minimal *vhd = (struct per_vhost_data__minimal *) lws_protocol_vh_priv_get(lws_get_vhost(wsi), lws_get_protocol(wsi));
+	struct WebSocketServer::per_vhost_data__minimal *vhd = (struct WebSocketServer::per_vhost_data__minimal *) lws_protocol_vh_priv_get(lws_get_vhost(wsi), lws_get_protocol(wsi));
 	// get the user context (in this case the OCPPServer object) even if the callback is part of the class it cant access the class members because it is static
 	// (and static functions can't access non-static members!) so we need to pass the user context to the callback that is asigned when creating the context
 	WebSocketServer *server = (WebSocketServer *)lws_context_user(lws_get_context(wsi));
@@ -42,7 +26,7 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 	switch (reason) {
 	case LWS_CALLBACK_PROTOCOL_INIT:
 		printf("Protocol initialized\n");
-		vhd = (struct per_vhost_data__minimal* )lws_protocol_vh_priv_zalloc(lws_get_vhost(wsi), lws_get_protocol(wsi), sizeof(struct per_vhost_data__minimal));
+		vhd = (struct WebSocketServer::per_vhost_data__minimal* )lws_protocol_vh_priv_zalloc(lws_get_vhost(wsi), lws_get_protocol(wsi), sizeof(struct WebSocketServer::per_vhost_data__minimal));
 		vhd->context = lws_get_context(wsi);
 		vhd->vhost = lws_get_vhost(wsi);
 		vhd->protocol = lws_get_protocol(wsi);
@@ -58,7 +42,7 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 	case LWS_CALLBACK_CLOSED:
 		printf("Connection closed\n");
 		// remove the pss from the linked-list
-		lws_ll_fwd_remove(struct per_session_data__minimal, pss_list, pss, vhd->pss_list);
+		lws_ll_fwd_remove(struct WebSocketServer::per_session_data__minimal, pss_list, pss, vhd->pss_list);
 		break;
 
 	case LWS_CALLBACK_SERVER_WRITEABLE:
@@ -102,8 +86,8 @@ struct lws_protocols WebSocketServer::protocols[] = {
     {
         "ocpp1.6",
         lwscallback,
-        sizeof(struct per_session_data__minimal),
-        128,
+        sizeof(struct WebSocketServer::per_session_data__minimal), // per_session_data_size
+        1024, // rx_buffer_size
     },
     { NULL, NULL, 0, 0 } /* Terminador */
 };

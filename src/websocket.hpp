@@ -21,14 +21,30 @@ public:
 	void removeobserver(OcppObserver* observer) override;
 	void notifyobservers(const std::string message) override;
 
+	struct per_session_data__minimal;
+
+	struct per_vhost_data__minimal {
+		struct lws_context *context;
+		struct lws_vhost *vhost;
+		const struct lws_protocols *protocol;
+
+		struct WebSocketServer::per_session_data__minimal *pss_list;
+	};
+
+	struct per_session_data__minimal {
+		struct lws *wsi;
+		std::string buffer;
+		std::vector<std::string> messages;
+
+		struct WebSocketServer::per_session_data__minimal *pss_list;
+	};
+
+
+
 private:
 	int port;
 	std::string protocol;
 	std::string path;
-
-	struct per_vhost_data__minimal;
-
-	struct per_session_data__minimal;
 
 	struct message_request {
 		std::string id;
