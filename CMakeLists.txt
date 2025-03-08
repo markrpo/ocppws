@@ -21,8 +21,8 @@ find_path(NLOHMANN_INCLUDE_DIR
 # find_library(LIBWEBSOCKETS_LIBRARIES NAMES websockets)
 
 # Set sources and headers files
-set(SOURCES src/main.cpp src/server.cpp src/responses.cpp)
-set(HEADERS src/server.hpp src/responses.hpp)
+set(SOURCES src/main.cpp src/ocpp.cpp src/responses.cpp src/websocket.cpp)
+set(HEADERS src/ocpp.hpp src/responses.hpp src/websocket.hpp src/iwebsocket.hpp)
 
 # Add executable
 add_executable(ocppws ${SOURCES} ${HEADERS})
