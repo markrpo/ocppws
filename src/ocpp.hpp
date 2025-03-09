@@ -31,7 +31,7 @@ public:
 
 private:
 	
-	int process_message(std::string& message, size_t len);
+	std::string process_message(std::string& message, size_t len);
 
 	void init_handlers();
 

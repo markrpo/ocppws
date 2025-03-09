@@ -88,19 +88,19 @@ OCPPServer::~OCPPServer() {
 }
 
 
-int OCPPServer::process_message(std::string& message, size_t len) {
+std::string OCPPServer::process_message(std::string& message, size_t len) {
 	json ocpp_message;
 	try {
 		ocpp_message = json::parse(message);
 	} catch (json::parse_error& e) {
 		std::cerr << "Error parsing message: " << e.what() << std::endl;
-		return 1;
+		return "";
 	}
 	// catch the message type example: [2,"93dbbb36-fbd3-4251-94f1-440ea6382234","BootNotification",{"chargePointModel":"WALLE","chargePointVendor":"ZIV"}]
 	// if there is no message type return an error
 	if (ocpp_message.size() < 3) {
 		std::cerr << "Error: message type not found" << std::endl;
-		return 1;
+		return "";
 	}
 	std::string message_type = ocpp_message[2];
 	std::cout << "Message type: " << message_type << std::endl;
@@ -110,19 +110,21 @@ int OCPPServer::process_message(std::string& message, size_t len) {
 		std::string response = it->second(ocpp_message);
 		if (response.empty()) {
 			std::cout << "No response" << std::endl;
-			return 1;
+			return "";
 		} else {
 			std::cout << "Response: " << response << std::endl;
-			// if there is a response add it to the messages vector of the pss and call lws_callback_on_writable to send the message
+			return response;
 		}
 	} else {
 		std::cerr << "Error: message type not found" << std::endl;
-		return 1;
+		return "";
 	}
     
-	return 0;
+	return "";
 }
 
 void OCPPServer::notify(std::string message) {
 	std::cout << "Notified: " << message << std::endl;
+	std::string response = OCPPServer::process_message(message, message.size());
+	ws->send(response);
 }

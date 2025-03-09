@@ -5,6 +5,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <vector>
+#include <thread>
 
 #include "iwebsocket.hpp"
 
@@ -12,14 +13,19 @@ class WebSocketServer : public IWebSocketServer {
 public:
     WebSocketServer(int port, std::string path);
 
-    void start() override;
-    void stop() override;
+    void start_blocking() override;
+	void start_async() override;
+	void start_read() override;
+	std::string read_message(int timeout) override;
+	void stop() override;
 
 	void send(const std::string message) override;
 
 	void addobserver(OcppObserver* observer) override;
 	void removeobserver(OcppObserver* observer) override;
 	void notifyobservers(const std::string message) override;
+
+	bool get_running() override;
 
 	struct per_session_data__minimal;
 
@@ -35,6 +41,7 @@ public:
 		struct lws *wsi;
 		std::string buffer;
 		std::vector<std::string> messages;
+		std::string id;
 
 		struct WebSocketServer::per_session_data__minimal *pss_list;
 	};
@@ -66,8 +73,12 @@ private:
 	std::mutex m_mutex;
 	std::condition_variable m_condition;
 
-	int m_running;
+	std::mutex m_mutex_messages;
+	std::condition_variable m_condition_messages;
 
+	std::thread m_thread;
+
+	bool m_running;
 };
 
 #endif // WEBSOCKET_HPP

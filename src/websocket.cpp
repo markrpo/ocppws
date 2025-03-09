@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cstring>
 #include <csignal>
-#include <thread>
 
 #include "websocket.hpp"
 
@@ -24,6 +23,40 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 	int m;
 	
 	switch (reason) {
+	case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
+		{	
+		printf("Filter protocol connection\n");
+
+		int uri_len = lws_hdr_total_length(wsi, WSI_TOKEN_GET_URI);
+		if (uri_len == 0) {
+			return -1;
+		}
+		char *uri = (char *)malloc(uri_len + 1);
+		if (!uri) {
+			return -1;
+		}
+		if (lws_hdr_copy(wsi, uri, uri_len + 1, WSI_TOKEN_GET_URI) != uri_len) {
+			free(uri);
+			return -1;
+		}
+		printf("URI: %s\n", uri);
+		std::string uri_str(uri);
+		free(uri);
+		// get the text after the last slash
+		std::string id = uri_str.substr(uri_str.find_last_of("/") + 1);
+		pss->id = id;
+		// check if any chargebox with the same id is already connected
+		struct WebSocketServer::per_session_data__minimal *pss2 = vhd->pss_list;
+		while (pss2) {
+			if (pss2->id == id) {
+				printf("Chargebox with id %s already connected\n", id.c_str());
+				return -1;
+			}
+			pss2 = pss2->pss_list;
+		}
+		}
+		break;
+
 	case LWS_CALLBACK_PROTOCOL_INIT:
 		printf("Protocol initialized\n");
 		vhd = (struct WebSocketServer::per_vhost_data__minimal* )lws_protocol_vh_priv_zalloc(lws_get_vhost(wsi), lws_get_protocol(wsi), sizeof(struct WebSocketServer::per_vhost_data__minimal));
@@ -37,6 +70,7 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 	   	// add the new pss to the linked-list:
 		lws_ll_fwd_insert(pss, pss_list, vhd->pss_list);
 		pss->wsi = wsi;
+		
 		break;
 
 	case LWS_CALLBACK_CLOSED:
@@ -61,7 +95,7 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 		break;
 
 	case LWS_CALLBACK_RECEIVE:{
-		printf("Received message\n");
+		printf("Message received from chargebox %s\n", pss->id.c_str());
 		unsigned char *data = (unsigned char *)in;
 		size_t data_len = len;
 		pss->buffer.append((char *)data, data_len);
@@ -92,7 +126,8 @@ struct lws_protocols WebSocketServer::protocols[] = {
     { NULL, NULL, 0, 0 } /* Terminador */
 };
 
-void WebSocketServer::start() {
+void WebSocketServer::start_blocking() {
+	
 	struct lws_context_creation_info info;
 	int n = 0;
 
@@ -108,6 +143,8 @@ void WebSocketServer::start() {
 		fprintf(stderr, "Error creating libwebsocket context\n");
 		return;
 	}
+
+	m_running = true;
 
 	std::thread t1([this] {
 		std::unique_lock<std::mutex> lock(m_mutex);
@@ -131,16 +168,83 @@ void WebSocketServer::start() {
 		n = lws_service(this->context, 0);
 	}
 
+	m_running = false;
+	m_condition.notify_all();
+
 	lws_context_destroy(this->context);
 	std::cout << "Server stopped" << std::endl;
-
 }
+
+void WebSocketServer::start_async() {
+    m_running = true;
+    m_thread = std::thread(&WebSocketServer::start_blocking, this);
+	m_thread.detach();
+}
+
+void WebSocketServer::start_read() {
+		m_running = true;
+
+		m_thread = std::thread([this] {
+		struct lws_context_creation_info info;
+		int n = 0;
+
+		memset(&info, 0, sizeof info);
+		info.port = this->port;
+		info.protocols = this->protocols;
+		info.vhost_name = "OCPPServer";
+		info.user = this;
+		info.options = LWS_SERVER_OPTION_HTTP_HEADERS_SECURITY_BEST_PRACTICES_ENFORCE;
+
+		this->context = lws_create_context(&info);
+		if (!this->context) {
+			fprintf(stderr, "Error creating libwebsocket context\n");
+			return;
+		}
+
+		while (n >= 0) {
+			n = lws_service(this->context, 0);
+		}
+
+		m_running = false;
+		m_condition.notify_all();
+
+		lws_context_destroy(this->context);
+		std::cout << "Server stopped" << std::endl;
+	});
+
+	m_thread.detach();
+}
+
+std::string WebSocketServer::read_message(int timeout) {
+	std::unique_lock<std::mutex> lock(m_mutex);
+	if (!m_messages.empty()) {
+		std::string message = m_messages.front();
+		m_messages.erase(m_messages.begin());
+		return message;
+	}
+	m_condition.wait_for(lock, std::chrono::seconds(timeout));
+	if (m_messages.empty()) {
+		std::cout << "Timeout" << std::endl;
+		return "";
+	}
+	std::cout << "Message received" << std::endl;
+	std::string message = m_messages.front();
+	m_messages.erase(m_messages.begin());
+	return message;
+}
+
+bool WebSocketServer::get_running() {
+    return m_running;
+}
+
 
 void WebSocketServer::stop() {
 
 }
 
 void WebSocketServer::send(std::string message) {
+	m_mutex_messages.lock();
+
 
 }
 
