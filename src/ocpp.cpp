@@ -123,8 +123,8 @@ std::string OCPPServer::process_message(std::string& message, size_t len) {
 	return "";
 }
 
-void OCPPServer::notify(std::string message) {
-	std::cout << "Notified: " << message << std::endl;
+void OCPPServer::notify(std::string message, std::string id) {
+	std::cout << "Notified: " << message << "From charger: " << id << std::endl;
 	std::string response = OCPPServer::process_message(message, message.size());
-	ws->send(response);
+	ws->send(response, id);
 }

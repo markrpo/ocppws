@@ -26,7 +26,7 @@ public:
 
 	void add_user_callback(std::string key, UserCallback callback);
 
-	void notify(const std::string message) override;
+	void notify(const std::string message, std::string id) override;
 
 
 private:

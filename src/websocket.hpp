@@ -16,14 +16,14 @@ public:
     void start_blocking() override;
 	void start_async() override;
 	void start_read() override;
-	std::string read_message(int timeout) override;
+	message_request read_message(int timeout) override;
 	void stop() override;
 
-	void send(const std::string message) override;
+	void send(const std::string message, const std::string id) override;
 
 	void addobserver(OcppObserver* observer) override;
 	void removeobserver(OcppObserver* observer) override;
-	void notifyobservers(const std::string message) override;
+	void notifyobservers(const std::string message, std::string id) override;
 
 	bool get_running() override;
 
@@ -53,17 +53,14 @@ private:
 	std::string protocol;
 	std::string path;
 
-	struct message_request {
-		std::string id;
-		std::string action;
-		std::string response;
-	};
-
-	std::vector<std::string> m_messages;
+	std::vector<message_request> m_messages;
+	std::vector<message_request> m_messages_write;
 
 	struct lws_context *context;
 	struct lws *wsi;
 
+	static std::string getpath(struct lws *wsi);
+	static std::string getid(std::string path);
 	static int lwscallback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
 
 	static struct lws_protocols protocols[];
