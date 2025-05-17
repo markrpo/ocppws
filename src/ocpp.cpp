@@ -8,19 +8,46 @@
 
 using json = nlohmann::json;
 
+bool OCPPServer::get_json(const std::string& message, json& ocppMessage) {
+	try {
+		ocppMessage = json::parse(message);
+	} catch (json::parse_error& e) {
+		std::cerr << "Error parsing message: " << e.what() << std::endl;
+		return false;
+	} catch (json::type_error& e) {
+		std::cerr << "Error parsing message: " << e.what() << std::endl;
+		return false;
+	} catch (json::other_error& e) {
+		std::cerr << "Error parsing message: " << e.what() << std::endl;
+		return false;
+	} catch (std::exception& e) {
+		std::cerr << "Error parsing message: " << e.what() << std::endl;
+		return false;
+	}
+	return true;
+}
+
 void OCPPServer::init_handlers() {
 	this->handlers["BootNotification"] = [this](json& msg) -> std::string { 			// the lambda function captures the this pointer (OCPPServer object) and spects a json object as argument (returns a string)
-		json callback_response;
-		json response_json;
+		std::string callback_response;
+		json half_response_json;
+		json response_json = json::array();													
 		std::string id = msg[1];
 
 		auto it = this->user_callbacks.find("BootNotification");													// find is a method of the map class that returns an iterator (it) to the element if it is found
 		if (it != this->user_callbacks.end()) {																		// when it is == to end() it means that the element was not found because it is the last element (end of the map)
 			
 			callback_response = it->second(msg.dump());																// it->second is the value of the element in the map (in this case the lambda user callback)
-			std::cout << "Callback response: " << callback_response.dump() << std::endl;
-			response_json = { 3, id, callback_response };
-			std::cout << "Full response: " << response_json.dump() << std::endl;
+			std::cout << "Callback response: " << callback_response << std::endl;
+			if (get_json(callback_response, half_response_json)) {													// if the callback response is a valid json object
+				std::cout << "Callback response is a valid json object" << std::endl;
+				response_json.push_back(3);													
+				response_json.push_back(id);								
+				response_json.push_back(half_response_json);													
+
+			} else {
+				std::cout << "Callback response is not a valid json object" << std::endl;
+			}
 
 		} else {
 
@@ -31,49 +58,49 @@ void OCPPServer::init_handlers() {
 	};
 
 	this->handlers["StatusNotification"] = [this](json& msg) -> std::string {
-		json callback_response;
-		json response_json;
+		std::string callback_response;
+		json half_response_json;
+		json response_json = json::array();
 		std::string id = msg[1];
 
 		auto it = this->user_callbacks.find("StatusNotification");
 		if (it != this->user_callbacks.end()) {
-			
 			callback_response = it->second(msg.dump());
-			if (callback_response.empty()) {
-				std::cout << "Empty response" << std::endl;
-				response_json = { 3, id, json::object() };
-				std::cout << "Full response: " << response_json.dump() << std::endl;
+			std::cout << "Callback response: " << callback_response << std::endl;
+			if (get_json(callback_response, half_response_json)) {
+				std::cout << "Callback response is a valid json object" << std::endl;
+				response_json.push_back(3);
+				response_json.push_back(id);
+				response_json.push_back(half_response_json);
 			} else {
-				std::cout << "Callback response: " << callback_response.dump() << std::endl;
-				response_json = { 3, id, callback_response };
-				std::cout << "Full response: " << response_json.dump() << std::endl;
+				std::cout << "Callback response is not a valid json object" << std::endl;
 			}
-
 		} else {
-
 			std::cout << "User callback not found" << std::endl;
-
 		}
 		return response_json.dump();
 	};
 	
 	this->handlers["Heartbeat"] = [this](json& msg) -> std::string {
-		json callback_response;
-		json response_json;
+		std::string callback_response;
+		json half_response_json;
+		json response_json = json::array();
 		std::string id = msg[1];
 
 		auto it = this->user_callbacks.find("Heartbeat");
 		if (it != this->user_callbacks.end()) {
-			
 			callback_response = it->second(msg.dump());
-			std::cout << "Callback response: " << callback_response.dump() << std::endl;
-			response_json = { 3, id, callback_response };
-			std::cout << "Full response: " << response_json.dump() << std::endl;
-
+			std::cout << "Callback response: " << callback_response << std::endl;
+			if (get_json(callback_response, half_response_json)) {
+				std::cout << "Callback response is a valid json object" << std::endl;
+				response_json.push_back(3);
+				response_json.push_back(id);
+				response_json.push_back(half_response_json);
+			} else {
+				std::cout << "Callback response is not a valid json object" << std::endl;
+			}
 		} else {
-
 			std::cout << "User callback not found" << std::endl;
-
 		}
 		return response_json.dump();
 	};

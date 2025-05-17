@@ -2,25 +2,25 @@
 #include "websocket.hpp"
 #include <iostream>  
 
-void add_callbacks(OCPPServer &ocpp) {
+void add_callbacks(IOCPPServer &ocpp) {
 
-	ocpp.add_user_callback("BootNotification", [](const std::string &payload) -> json { // lambda function  [] is used to capture the variables from the enclosing scope (in this case, the main function)
+	ocpp.add_user_callback("BootNotification", [](const std::string &payload) -> std::string { // lambda function  [] is used to capture the variables from the enclosing scope (in this case, the main function)
 																						// The function takes a string as input and returns a string as output (-> is not necessary, but it makes the code more readable)
 		std::cout << "BootNotification: " << payload << std::endl;
 		json response = Responses::BootNotificationResponse(Responses::BootStatus::Accepted, Responses::get_utc_time() , 60);
-		return response;
+		return response.dump();
 	});
 
-	ocpp.add_user_callback("Heartbeat", [](const std::string &payload) -> json {
+	ocpp.add_user_callback("Heartbeat", [](const std::string &payload) -> std::string {
 		std::cout << "Heartbeat: " << payload << std::endl;
 		json response = Responses::HeartbeatResponse(Responses::get_utc_time());
-		return response;
+		return response.dump();
 	});
 
-	ocpp.add_user_callback("StatusNotification", [](const std::string &payload) -> json {
+	ocpp.add_user_callback("StatusNotification", [](const std::string &payload) -> std::string {
 		std::cout << "StatusNotification: " << payload << std::endl;
 		json response = Responses::StatusNotificationResponse();
-		return response;
+		return response.dump();
 	});
 
 	std::cout << "Callbacks added" << std::endl;

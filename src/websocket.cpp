@@ -99,6 +99,7 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 			m = lws_write(wsi, buf + LWS_SEND_BUFFER_PRE_PADDING, strlen(message.c_str()), LWS_WRITE_TEXT);
 			free(buf);
 		}
+		lws_cancel_service(server->context);
 		break;
 
 	case LWS_CALLBACK_RECEIVE:
@@ -119,6 +120,19 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 	}
 	case LWS_CALLBACK_EVENT_WAIT_CANCELLED:
 		std::cout << "Event wait cancelled, size of messages: " << server->m_messages_write.size() << std::endl;
+		if (!server->m_messages_write.empty()) {
+			message_request message = server->m_messages_write.front();
+			server->m_messages_write.erase(server->m_messages_write.begin());
+			WebSocketServer::per_session_data__minimal *pss = vhd->pss_list;
+			while (pss) {
+				if (pss->id == message.id) {
+					pss->messages.push_back(message.message);
+					lws_callback_on_writable(pss->wsi);
+					break;
+				}
+				pss = pss->pss_list;
+			}
+		}
 		break;
 	default:
 		break;
@@ -255,7 +269,8 @@ void WebSocketServer::stop() {
 
 }
 
-void WebSocketServer::send(const std::string message, const std::string id) {	
+void WebSocketServer::send(const std::string message, const std::string id) {
+	std::cout << "Sending message to chargebox " << id << ": " << message << std::endl;
 	std::unique_lock<std::mutex> lock(m_mutex_messages);
 	m_messages_write.push_back(message_request(id, message));
 	lws_cancel_service(this->context);
@@ -274,3 +289,4 @@ void WebSocketServer::notifyobservers(std::string message, std::string id) {
 		observer->notify(message, id);
     }
 }
+
