@@ -38,7 +38,7 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 	// (and static functions can't access non-static members!) so we need to pass the user context to the callback that is asigned when creating the context
 	WebSocketServer *server = (WebSocketServer *)lws_context_user(lws_get_context(wsi));
 
-	//std::unique_lock<std::mutex> lock(server->m_mutex_messages);
+	std::unique_lock<std::mutex> lock(server->m_mutex_messages);
 
 	int m;
 	
@@ -82,8 +82,10 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 
 	case LWS_CALLBACK_CLOSED:
 		printf("Connection closed\n");
+
 		// remove the pss from the linked-list
 		lws_ll_fwd_remove(struct WebSocketServer::per_session_data__minimal, pss_list, pss, vhd->pss_list);
+		lws_cancel_service(server->context);
 		break;
 
 	case LWS_CALLBACK_SERVER_WRITEABLE:
@@ -121,16 +123,22 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 	case LWS_CALLBACK_EVENT_WAIT_CANCELLED:
 		std::cout << "Event wait cancelled, size of messages: " << server->m_messages_write.size() << std::endl;
 		if (!server->m_messages_write.empty()) {
+			bool found = false;
 			message_request message = server->m_messages_write.front();
 			server->m_messages_write.erase(server->m_messages_write.begin());
 			WebSocketServer::per_session_data__minimal *pss = vhd->pss_list;
 			while (pss) {
 				if (pss->id == message.id) {
+					found = true;
 					pss->messages.push_back(message.message);
 					lws_callback_on_writable(pss->wsi);
 					break;
 				}
 				pss = pss->pss_list;
+			}
+			if (!found) {
+				std::cout << "Removing message from queue, no session found for id: " << message.id << std::endl;
+				lws_cancel_service(server->context);
 			}
 		}
 		break;

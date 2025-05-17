@@ -1,11 +1,11 @@
 #include <libwebsockets.h>
 #include <vector>
-// map
 #include <map> 
 #include <functional>
-#include "iwebsocket.hpp"
+#include <nlohmann/json.hpp>
 
 #include "responses.hpp"
+#include "iwebsocket.hpp"
 #include "iocpp.hpp"
 
 using json = nlohmann::json;
@@ -13,11 +13,12 @@ using json = nlohmann::json;
 #ifndef OCPPSERVER_HPP
 #define OCPPSERVER_HPP
 
-class OCPPServer : public OcppObserver, public IOCPPServer
+class OCPPServer : public IOCPPServer
 {
 	
 public:
-	OCPPServer(IWebSocketServer* ws) : ws(ws) {
+	OCPPServer(IWebSocketServer* ws) : m_ws(ws) {
+		m_ws->addobserver(this);
 		init_handlers();
 	}
 	~OCPPServer();
@@ -39,7 +40,7 @@ private:
 	std::map<std::string, UserCallback> user_callbacks;
 	std::map<std::string, Handler> handlers;
 
-	IWebSocketServer* ws;
+	IWebSocketServer* m_ws;
 
 };
 

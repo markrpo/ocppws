@@ -1,4 +1,6 @@
 #include "responses.hpp"
+#include "nlohmann/json.hpp"
+using json = nlohmann::json;
 
 std::string Responses::get_utc_time() {
 	time_t now = time(0);
@@ -8,22 +10,22 @@ std::string Responses::get_utc_time() {
 	return std::string(buffer);
 }
 
-json Responses::BootNotificationResponse(Responses::BootStatus status, std::string currentTime, int interval) {
+std::string Responses::BootNotificationResponse(Responses::BootStatus status, std::string currentTime, int interval) {
 	json response;
 	response["status"] = (status == Responses::BootStatus::Accepted) ? "Accepted" : (status == Responses::BootStatus::Rejected) ? "Rejected" : "Unknown";
 	response["currentTime"] = currentTime;
 	response["interval"] = interval;
-	return response;
+	return response.dump();
 }
 
-json Responses::HeartbeatResponse(std::string currentTime) {
+std::string Responses::HeartbeatResponse(std::string currentTime) {
 	json response;
 	response["currentTime"] = currentTime;
-	return response;
+	return response.dump();
 }
 
-json Responses::StatusNotificationResponse() {
+std::string Responses::StatusNotificationResponse() {
 	json response;
-	return response;
+	return response.dump();
 }
 

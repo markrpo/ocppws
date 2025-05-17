@@ -2,9 +2,8 @@
 #include <cstring>
 #include <csignal>
 
+#include "nlohmann/json.hpp"		
 #include "ocpp.hpp"
-
-#include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
 
@@ -153,5 +152,5 @@ std::string OCPPServer::process_message(std::string& message, size_t len) {
 void OCPPServer::notify(std::string message, std::string id) {
 	std::cout << "Notified: " << message << "From charger: " << id << std::endl;
 	std::string response = OCPPServer::process_message(message, message.size());
-	ws->send(response, id);
+	m_ws->send(response, id);
 }

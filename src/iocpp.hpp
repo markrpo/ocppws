@@ -3,8 +3,11 @@
 
 #include <string>
 #include <functional>
+#include "iwebsocket.hpp"
+#include "responses.hpp"
 
-class IOCPPServer {
+class IOCPPServer : public OcppObserver
+{
 	
 public:
 
