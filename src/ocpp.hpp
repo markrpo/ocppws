@@ -1,5 +1,6 @@
 #include <libwebsockets.h>
 #include <vector>
+
 #include <map> 
 #include <functional>
 #include <nlohmann/json.hpp>
@@ -12,6 +13,7 @@ using json = nlohmann::json;
 
 #ifndef OCPPSERVER_HPP
 #define OCPPSERVER_HPP
+
 
 class OCPPServer : public IOCPPServer
 {
@@ -35,6 +37,7 @@ public:
 	void add_on_connect_callback(onConnectCallback callback) final; // from iocpp.hpp
 	void add_on_disconnect_callback(onDisconnectCallback callback) final; // from iocpp.hpp
 
+
 private:
 	
 	std::string process_message(std::string& message, size_t len);
@@ -45,11 +48,13 @@ private:
 	std::map<std::string, UserCallback> user_callbacks;
 	std::map<std::string, Handler> handlers;
 
+
 	onConnectCallbackOld old_on_connect_callback = nullptr;
 	onConnectCallback on_connect_callback = nullptr;
 	onDisconnectCallback on_disconnect_callback = nullptr;
 
 	IWebSocketServer* m_ws;
+
 
 };
 

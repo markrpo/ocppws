@@ -18,7 +18,7 @@ public:
 	virtual void notify(const std::string message, const std::string id) = 0;
 	virtual void notifyConnected(const std::string id) = 0;
 	virtual void notifyDisconnected(const std::string id) = 0;
-};
+
 
 class IWebSocketServer {
 public:

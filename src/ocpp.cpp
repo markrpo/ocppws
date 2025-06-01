@@ -2,6 +2,7 @@
 #include <cstring>
 #include <csignal>
 
+
 #include "nlohmann/json.hpp"		
 #include "ocpp.hpp"
 
@@ -27,6 +28,7 @@ bool OCPPServer::get_json(const std::string& message, json& ocppMessage) {
 }
 
 void OCPPServer::init_handlers() {
+
 
 	this->handlers["BootNotification"] = [this](json& msg) -> std::string { 			// the lambda function captures the this pointer (OCPPServer object) and spects a json object as argument (returns a string)
 		std::string callback_response;

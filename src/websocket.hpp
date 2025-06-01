@@ -27,6 +27,7 @@ public:
 	void notifyObserversConnected(const std::string id) override;
 	void notifyObserversDisconnected(const std::string id) override;
 
+
 	bool get_running() override;
 
 	struct per_session_data__minimal;
@@ -58,6 +59,7 @@ private:
 	std::vector<message_request> m_messages;
 	std::vector<std::string> m_connections;
 	std::vector<std::string> m_disconnections;
+
 	std::vector<message_request> m_messages_write;
 
 	struct lws_context *context;

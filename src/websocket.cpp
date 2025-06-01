@@ -40,6 +40,7 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 
 	std::unique_lock<std::mutex> lock(server->m_mutex_messages);
 
+
 	int m;
 	
 	switch (reason) {
@@ -76,6 +77,7 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 		break;
 
 	case LWS_CALLBACK_ESTABLISHED:
+
 		{
 			printf("Connection established\n");
 	   		// add the new pss to the linked-list:
@@ -85,7 +87,6 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 			server->m_condition.notify_one();	
 		
 		
-
 		lws_ll_fwd_insert(pss, pss_list, vhd->pss_list);
 		pss->wsi = wsi;
 		
@@ -105,6 +106,7 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 		lws_cancel_service(server->context);
 		break;
 		}
+
 
 	case LWS_CALLBACK_SERVER_WRITEABLE:
 		printf("Server writeable\n");
@@ -142,12 +144,14 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 		std::cout << "Event wait cancelled, size of messages: " << server->m_messages_write.size() << std::endl;
 		if (!server->m_messages_write.empty()) {
 			bool found = false;
+
 			message_request message = server->m_messages_write.front();
 			server->m_messages_write.erase(server->m_messages_write.begin());
 			WebSocketServer::per_session_data__minimal *pss = vhd->pss_list;
 			while (pss) {
 				if (pss->id == message.id) {
 					found = true;
+
 					pss->messages.push_back(message.message);
 					lws_callback_on_writable(pss->wsi);
 					break;
@@ -204,6 +208,7 @@ void WebSocketServer::start_blocking() {
 		while(m_running){
 			m_condition.wait(lock);
 			std::cout << "Process thread notified" << std::endl;
+
 			// This can be improved, now we just notify in this order, but if a client is connected while we notify the message we could notify a message of a client that is not notified the connection
 			while (!m_connections.empty()) {
 				std::string id = m_connections.front();
@@ -219,6 +224,7 @@ void WebSocketServer::start_blocking() {
 				this->notifyObserversDisconnected(id);
 				lock.lock();
 			}
+
 			while(!m_messages.empty()){
 				std::string message = m_messages.front().message;
 				std::string id = m_messages.front().id;
@@ -330,6 +336,7 @@ void WebSocketServer::notifyobservers(std::string message, std::string id) {
 		observer->notify(message, id);
     }
 }
+
 
 void WebSocketServer::notifyObserversConnected(std::string id) {
     for (auto observer : this->observers) {
