@@ -39,15 +39,8 @@ public:
 
 
 private:
-	
-	std::string process_message(std::string& message, size_t len);
-	bool get_json(const std::string& message, json& j);
-
-	void init_handlers();
-
 	std::map<std::string, UserCallback> user_callbacks;
 	std::map<std::string, Handler> handlers;
-
 
 	onConnectCallbackOld old_on_connect_callback = nullptr;
 	onConnectCallback on_connect_callback = nullptr;
@@ -55,7 +48,9 @@ private:
 
 	IWebSocketServer* m_ws;
 
-
+	std::string process_message(std::string& message, size_t len);
+	bool get_json(const std::string& message, json& j);
+	void init_handlers();
 };
 
 #endif

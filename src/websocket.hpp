@@ -18,16 +18,12 @@ public:
 	void start_read() override;
 	message_request read_message(int timeout) override;
 	void stop() override;
-
 	void send(const std::string message, const std::string id) override;
-
 	void addobserver(OcppObserver* observer) override;
 	void removeobserver(OcppObserver* observer) override;
 	void notifyobservers(const std::string message, std::string id) override;
 	void notifyObserversConnected(const std::string id) override;
 	void notifyObserversDisconnected(const std::string id) override;
-
-
 	bool get_running() override;
 
 	struct per_session_data__minimal;
@@ -59,23 +55,19 @@ private:
 	std::vector<message_request> m_messages;
 	std::vector<std::string> m_connections;
 	std::vector<std::string> m_disconnections;
-
 	std::vector<message_request> m_messages_write;
 
 	struct lws_context *context;
 	struct lws *wsi;
-
 	static std::string getpath(struct lws *wsi);
 	static std::string getid(std::string path);
 	static int lwscallback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
-
 	static struct lws_protocols protocols[];
 
 	std::vector<OcppObserver*> observers;
 
 	std::mutex m_mutex;
 	std::condition_variable m_condition;
-
 	std::mutex m_mutex_messages;
 	std::condition_variable m_condition_messages;
 
