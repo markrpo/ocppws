@@ -63,8 +63,7 @@ void Service::add_callbacks() {
 
 void Service::initAndRun() {
 	add_callbacks();
-	//m_server.start_blocking(); // Notifies observer by itself
-	m_server.start_async();
+	m_server.start_blocking(); // Notifies observer by itself
 	/*m_server.start_read(); // this starts the server in a separate thread and it does not notify the observer (the observer must be notified by the user)
 	while (m_server.get_running()) {
 		message_request msg = m_server.read_message(10);
@@ -74,7 +73,8 @@ void Service::initAndRun() {
 		else {
 			std::cout << "No message received (timeout)" << std::endl;
 		}
-	} */
+	} 
+	m_server.start_async(); // this starts the server in a separate thread and it does notify the observer
 	while (m_server.get_running()) {
 		std::this_thread::sleep_for(std::chrono::seconds(1)); // Sleep to avoid busy waitin
 		if (m_transaction) {
@@ -84,5 +84,5 @@ void Service::initAndRun() {
 		else {
 			std::cout << "No active transaction" << std::endl;
 		}
-	}
+	}*/
 }
