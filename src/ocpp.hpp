@@ -29,6 +29,11 @@ public:
 
 	void add_user_callback(std::string key, UserCallback callback) final; // from iocpp.hpp
 	void notify(const std::string message, std::string id) final; // from OcppObserver
+	void notifyConnected(const std::string id) final; // from OcppObserver
+	void notifyDisconnected(const std::string id) final; // from OcppObserver
+	void add_old_on_connect_callback(onConnectCallbackOld callback) final; // from iocpp.hpp
+	void add_on_connect_callback(onConnectCallback callback) final; // from iocpp.hpp
+	void add_on_disconnect_callback(onDisconnectCallback callback) final; // from iocpp.hpp
 
 private:
 	
@@ -39,6 +44,10 @@ private:
 
 	std::map<std::string, UserCallback> user_callbacks;
 	std::map<std::string, Handler> handlers;
+
+	onConnectCallbackOld old_on_connect_callback = nullptr;
+	onConnectCallback on_connect_callback = nullptr;
+	onDisconnectCallback on_disconnect_callback = nullptr;
 
 	IWebSocketServer* m_ws;
 

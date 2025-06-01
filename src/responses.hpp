@@ -40,6 +40,16 @@ public:
 	};
 	static std::string StatusNotificationResponse();
 
+	enum class IdTagInfoStatus { Accepted, Blocked, Expired, Invalid, ConcurrentTx };
+	static std::string StartTransactionResponse(int transactionId, Responses::IdTagInfoStatus idTagInfoStatus);
+	static std::string StopTransactionResponse(Responses::IdTagInfoStatus idTagInfoStatus);
+	static std::string MeterValuesResponse();
+	static std::string AuthorizeResponse(Responses::IdTagInfoStatus idTagInfoStatus, std::string expiryDate);
+
+	enum class DataTransferStatus { Accepted, Rejected, UnknownMessageId, UnknownVendorId };
+	static std::string DataTransferResponse(Responses::DataTransferStatus status, std::string data);
+
+
 	using Usserdata = std::variant<BootNotificationData, HeartbeatData, StatusNotificationData>; // using creates an alias for a type in this case a variant
 	// other option is to define a struct of usserdata with optional fields
 	struct Usserdataoptional {

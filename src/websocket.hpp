@@ -24,6 +24,8 @@ public:
 	void addobserver(OcppObserver* observer) override;
 	void removeobserver(OcppObserver* observer) override;
 	void notifyobservers(const std::string message, std::string id) override;
+	void notifyObserversConnected(const std::string id) override;
+	void notifyObserversDisconnected(const std::string id) override;
 
 	bool get_running() override;
 
@@ -54,6 +56,8 @@ private:
 	std::string path;
 
 	std::vector<message_request> m_messages;
+	std::vector<std::string> m_connections;
+	std::vector<std::string> m_disconnections;
 	std::vector<message_request> m_messages_write;
 
 	struct lws_context *context;
