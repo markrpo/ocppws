@@ -1,11 +1,12 @@
 #include <libwebsockets.h>
 #include <vector>
-// map
+
 #include <map> 
 #include <functional>
-#include "iwebsocket.hpp"
+#include <nlohmann/json.hpp>
 
 #include "responses.hpp"
+#include "iwebsocket.hpp"
 #include "iocpp.hpp"
 
 using json = nlohmann::json;
@@ -13,11 +14,13 @@ using json = nlohmann::json;
 #ifndef OCPPSERVER_HPP
 #define OCPPSERVER_HPP
 
-class OCPPServer : public OcppObserver, public IOCPPServer
+
+class OCPPServer : public IOCPPServer
 {
 	
 public:
-	OCPPServer(IWebSocketServer* ws) : ws(ws) {
+	OCPPServer(IWebSocketServer* ws) : m_ws(ws) {
+		m_ws->addobserver(this);
 		init_handlers();
 	}
 	~OCPPServer();
@@ -28,6 +31,12 @@ public:
 
 	void add_user_callback(std::string key, UserCallback callback) final; // from iocpp.hpp
 	void notify(const std::string message, std::string id) final; // from OcppObserver
+	void notifyConnected(const std::string id) final; // from OcppObserver
+	void notifyDisconnected(const std::string id) final; // from OcppObserver
+	void add_old_on_connect_callback(onConnectCallbackOld callback) final; // from iocpp.hpp
+	void add_on_connect_callback(onConnectCallback callback) final; // from iocpp.hpp
+	void add_on_disconnect_callback(onDisconnectCallback callback) final; // from iocpp.hpp
+
 
 private:
 	
@@ -39,7 +48,13 @@ private:
 	std::map<std::string, UserCallback> user_callbacks;
 	std::map<std::string, Handler> handlers;
 
-	IWebSocketServer* ws;
+
+	onConnectCallbackOld old_on_connect_callback = nullptr;
+	onConnectCallback on_connect_callback = nullptr;
+	onDisconnectCallback on_disconnect_callback = nullptr;
+
+	IWebSocketServer* m_ws;
+
 
 };
 

@@ -38,7 +38,8 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 	// (and static functions can't access non-static members!) so we need to pass the user context to the callback that is asigned when creating the context
 	WebSocketServer *server = (WebSocketServer *)lws_context_user(lws_get_context(wsi));
 
-	//std::unique_lock<std::mutex> lock(server->m_mutex_messages);
+	std::unique_lock<std::mutex> lock(server->m_mutex_messages);
+
 
 	int m;
 	
@@ -58,6 +59,9 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 			if (pss2->id == id) {
 				printf("Chargebox with id %s already connected\n", id.c_str());
 				return -1;
+			} else if (pss2->id.empty()) {
+				printf("Chargebox with empty id, closing connection\n");
+				return -1; // close the connection if id is empty
 			}
 			pss2 = pss2->pss_list;
 		}
@@ -73,18 +77,36 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 		break;
 
 	case LWS_CALLBACK_ESTABLISHED:
-		printf("Connection established\n");
-	   	// add the new pss to the linked-list:
+
+		{
+			printf("Connection established\n");
+	   		// add the new pss to the linked-list:
+			std::unique_lock<std::mutex> lock(server->m_mutex);
+			std::string id = pss->id;
+			server->m_connections.push_back(id);
+			server->m_condition.notify_one();	
+		
+		
 		lws_ll_fwd_insert(pss, pss_list, vhd->pss_list);
 		pss->wsi = wsi;
 		
 		break;
+		}
 
 	case LWS_CALLBACK_CLOSED:
+		{
 		printf("Connection closed\n");
+		// notify observers that the chargebox is disconnected
+		std::unique_lock<std::mutex> lock(server->m_mutex);
+		server->m_disconnections.push_back(pss->id);
+		server->m_condition.notify_one();
+
 		// remove the pss from the linked-list
 		lws_ll_fwd_remove(struct WebSocketServer::per_session_data__minimal, pss_list, pss, vhd->pss_list);
+		lws_cancel_service(server->context);
 		break;
+		}
+
 
 	case LWS_CALLBACK_SERVER_WRITEABLE:
 		printf("Server writeable\n");
@@ -121,16 +143,24 @@ int WebSocketServer::lwscallback(struct lws *wsi, enum lws_callback_reasons reas
 	case LWS_CALLBACK_EVENT_WAIT_CANCELLED:
 		std::cout << "Event wait cancelled, size of messages: " << server->m_messages_write.size() << std::endl;
 		if (!server->m_messages_write.empty()) {
+			bool found = false;
+
 			message_request message = server->m_messages_write.front();
 			server->m_messages_write.erase(server->m_messages_write.begin());
 			WebSocketServer::per_session_data__minimal *pss = vhd->pss_list;
 			while (pss) {
 				if (pss->id == message.id) {
+					found = true;
+
 					pss->messages.push_back(message.message);
 					lws_callback_on_writable(pss->wsi);
 					break;
 				}
 				pss = pss->pss_list;
+			}
+			if (!found) {
+				std::cout << "Removing message from queue, no session found for id: " << message.id << std::endl;
+				lws_cancel_service(server->context);
 			}
 		}
 		break;
@@ -178,6 +208,23 @@ void WebSocketServer::start_blocking() {
 		while(m_running){
 			m_condition.wait(lock);
 			std::cout << "Process thread notified" << std::endl;
+
+			// This can be improved, now we just notify in this order, but if a client is connected while we notify the message we could notify a message of a client that is not notified the connection
+			while (!m_connections.empty()) {
+				std::string id = m_connections.front();
+				m_connections.erase(m_connections.begin());
+				lock.unlock();
+				this->notifyObserversConnected(id);
+				lock.lock();
+			}
+			while (!m_disconnections.empty()) {
+				std::string id = m_disconnections.front();
+				m_disconnections.erase(m_disconnections.begin());
+				lock.unlock();
+				this->notifyObserversDisconnected(id);
+				lock.lock();
+			}
+
 			while(!m_messages.empty()){
 				std::string message = m_messages.front().message;
 				std::string id = m_messages.front().id;
@@ -287,6 +334,19 @@ void WebSocketServer::removeobserver(OcppObserver *observer) {
 void WebSocketServer::notifyobservers(std::string message, std::string id) {
     for (auto observer : this->observers) {
 		observer->notify(message, id);
+    }
+}
+
+
+void WebSocketServer::notifyObserversConnected(std::string id) {
+    for (auto observer : this->observers) {
+		observer->notifyConnected(id);
+    }
+}
+
+void WebSocketServer::notifyObserversDisconnected(std::string id) {
+    for (auto observer : this->observers) {
+		observer->notifyDisconnected(id);
     }
 }
 

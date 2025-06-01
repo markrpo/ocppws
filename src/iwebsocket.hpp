@@ -16,7 +16,9 @@ struct message_request {
 class OcppObserver {
 public:
 	virtual void notify(const std::string message, const std::string id) = 0;
-};
+	virtual void notifyConnected(const std::string id) = 0;
+	virtual void notifyDisconnected(const std::string id) = 0;
+
 
 class IWebSocketServer {
 public:
@@ -29,6 +31,8 @@ public:
 	virtual void addobserver(OcppObserver* observer) = 0;
 	virtual void removeobserver(OcppObserver* observer) = 0;
 	virtual void notifyobservers(const std::string message, std::string id) = 0;
+	virtual void notifyObserversConnected(const std::string id) = 0;
+	virtual void notifyObserversDisconnected(const std::string id) = 0;
 	virtual bool get_running() = 0;
 };
 
