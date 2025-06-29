@@ -4,6 +4,9 @@
 #build
 build
 build/*
+src/v16/schemas/*.hpp
+src/jsons_headers.hpp
+src/jsons_header.hpp
 
 # Compiled Object files
 *.slo

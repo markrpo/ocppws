@@ -45,7 +45,7 @@ void OCPPServer::init_handlers() {
 				std::cout << "Callback response is a valid json object" << std::endl;
 				response_json.push_back(3);													
 				response_json.push_back(id);								
-				response_json.push_back(half_response_json);													
+				response_json.push_back(half_response_json);
 
 			} else {
 				std::cout << "Callback response is not a valid json object" << std::endl;

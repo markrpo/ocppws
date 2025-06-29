@@ -3,6 +3,7 @@
 
 #include <string>
 #include <functional>
+#include <iostream>
 #include "iwebsocket.hpp"
 #include "responses.hpp"
 
@@ -22,6 +23,13 @@ public:
 	virtual void add_old_on_connect_callback(onConnectCallbackOld callback) = 0;
 	virtual void add_on_connect_callback(onConnectCallback callback) = 0;
 	virtual void add_on_disconnect_callback(onDisconnectCallback callback) = 0;
+
+};
+
+class OcppJsons
+{
+public:
+	static std::string heartbeatResponse();
 
 };
 
