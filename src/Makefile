@@ -4,12 +4,13 @@ dep=$(OBJ:.o=.d)
 JSONS=$(wildcard ./v16/schemas/*.json)
 JSON_HEADERS=$(JSONS:.json=.hpp)
 JSON_HEADER=jsons_headers.hpp
+VALIJSON_HEADER=valijson_nlohmann.hpp
 EXE=ocppws
 CXX=g++
 # Wall: all warnings on -std=c++17: C++17 standard -I.: include path
 CXXFLAGS=-std=c++17 -Wall -I.
 LDFLAGS=-lwebsockets
-INCLUDE=$(JSON_HEADERS)
+INCLUDES=-I.
 
 all: $(EXE)
 
@@ -22,7 +23,7 @@ $(EXE): $(OBJ)
 
 # MMD: generate dependencies (header files .d)
 %.o: %.cpp $(JSON_HEADER)
-	$(CXX) $(CXXFLAGS) -MMD -c $< -o $@ -I. -I./v16/schemas
+	$(CXX) $(CXXFLAGS) -MMD -c $< -o $@ $(INCLUDES)
 
 
 # Generate JSON header files from JSON files
@@ -42,11 +43,16 @@ $(JSON_HEADER): $(JSON_HEADERS)
 	done  
 	@echo "#endif // JSONS_HEADERS_HPP" >> $@
 
-header: $(JSON_HEADER)
+header: $(JSON_HEADER) $(VALIJSON_HEADER)
 
+$(VALIJSON_HEADER):
+	@git clone git@github.com:tristanpenman/valijson.git
+	@cd valijson && git checkout v1.0.5
+	@cd valijson && ./bundle.sh nlohmann_json > valijson_nlohmann_bundled.hpp
+	@mv valijson/valijson_nlohmann_bundled.hpp $(VALIJSON_HEADER)
 
 clean:
-	rm -f $(OBJ) $(EXE) $(dep) $(JSON_HEADERS) $(JSON_HEADER)
+	rm -rf $(OBJ) $(EXE) $(dep) $(JSON_HEADERS) $(JSON_HEADER) $(VALIJSON_HEADER) valijson
 
 # .PHONY: target is not a file this is used to avoid conflicts with files
 .PHONY: all clean

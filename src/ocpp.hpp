@@ -41,6 +41,7 @@ public:
 private:
 	std::map<std::string, UserCallback> user_callbacks;
 	std::map<std::string, Handler> handlers;
+	std::string generic_handler(const std::string& message, json& j);
 
 	onConnectCallbackOld old_on_connect_callback = nullptr;
 	onConnectCallback on_connect_callback = nullptr;

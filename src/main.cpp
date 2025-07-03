@@ -11,5 +11,4 @@ int main() {
 	OCPPServer ocpp(&server);
 	Service service(ocpp, server);
 	service.initAndRun();
-
 }
