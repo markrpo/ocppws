@@ -129,7 +129,10 @@ void OCPPServer::init_handlers() {
 	    get_json(OcppJsons::bootNotificationRequest(), bootSchema);
 		if (!validate_json(msg[3], bootSchema)) {
 			std::cerr << "Error: invalid BootNotification message" << std::endl;
-			return "";
+			json invalidResponse;
+			make_call_error(msg[1], "ProtocolError", "Invalid BootNotification message", invalidResponse);
+			return invalidResponse.dump();
+
 		}
 		return generic_handler("BootNotification", msg);
 	};
@@ -139,7 +142,9 @@ void OCPPServer::init_handlers() {
 	    get_json(OcppJsons::statusNotificationRequest(), statusSchema);
 		if (!validate_json(msg[3], statusSchema)) {
 			std::cerr << "Error: invalid StatusNotification message" << std::endl;
-			return "";
+			json invalidResponse;
+			make_call_error(msg[1], "ProtocolError", "Invalid StatusNotification message", invalidResponse);
+			return invalidResponse.dump();
 		}
 		return generic_handler("StatusNotification", msg);
 	};
@@ -149,7 +154,9 @@ void OCPPServer::init_handlers() {
 	    get_json(OcppJsons::heartbeatRequest(), heartSchema);
 		if (!validate_json(msg[3], heartSchema)) {
 			std::cerr << "Error: invalid Heartbeat message" << std::endl;
-			return "";
+			json invalidResponse;
+			make_call_error(msg[1], "ProtocolError", "Invalid Heartbeat message", invalidResponse);
+			return invalidResponse.dump();
 		}
 		return generic_handler("Heartbeat", msg);
 	};
@@ -159,7 +166,9 @@ void OCPPServer::init_handlers() {
 	    get_json(OcppJsons::authorizeRequest(), authSchema);
 		if (!validate_json(msg[3], authSchema)) {
 			std::cerr << "Error: invalid Authorize message" << std::endl;
-			return "";
+			json invalidResponse;
+			make_call_error(msg[1], "ProtocolError", "Invalid Authorize message", invalidResponse);
+			return invalidResponse.dump();
 		}
 		return generic_handler("Authorize", msg);
 	};
@@ -169,7 +178,9 @@ void OCPPServer::init_handlers() {
 	    get_json(OcppJsons::startTransactionRequest(), startSchema);
 		if (!validate_json(msg[3], startSchema)) {
 			std::cerr << "Error: invalid StartTransaction message" << std::endl;
-			return "";
+			json invalidResponse;
+			make_call_error(msg[1], "ProtocolError", "Invalid StartTransaction message", invalidResponse);
+			return invalidResponse.dump();
 		}
 
 		return generic_handler("StartTransaction", msg);
@@ -180,7 +191,9 @@ void OCPPServer::init_handlers() {
 	    get_json(OcppJsons::stopTransactionRequest(), stopSchema);
 		if (!validate_json(msg[3], stopSchema)) {
 			std::cerr << "Error: invalid StopTransaction message" << std::endl;
-			return "";
+			json invalidResponse;
+			make_call_error(msg[1], "ProtocolError", "Invalid StopTransaction message", invalidResponse);
+			return invalidResponse.dump();
 		}
 		return generic_handler("StopTransaction", msg);
 	};
@@ -190,7 +203,9 @@ void OCPPServer::init_handlers() {
 	    get_json(OcppJsons::meterValuesRequest(), meterSchema);
 		if (!validate_json(msg[3], meterSchema)) {
 			std::cerr << "Error: invalid MeterValues message" << std::endl;
-			return "";
+			json invalidResponse;
+			make_call_error(msg[1], "ProtocolError", "Invalid MeterValues message", invalidResponse);
+			return invalidResponse.dump();
 		}
 		return generic_handler("MeterValues", msg);
 	};
@@ -200,7 +215,9 @@ void OCPPServer::init_handlers() {
 	    get_json(OcppJsons::dataTransferRequest(), dataSchema);
 		if (!validate_json(msg[3], dataSchema)) {
 			std::cerr << "Error: invalid DataTransfer message" << std::endl;
-			return "";
+			json invalidResponse;
+			make_call_error(msg[1], "ProtocolError", "Invalid DataTransfer message", invalidResponse);
+			return invalidResponse.dump();
 		}
 		return generic_handler("DataTransfer", msg);
 	};

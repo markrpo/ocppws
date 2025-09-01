@@ -34,7 +34,7 @@ $(EXE): $(OBJ)
 	xxd -i $< >> $@
 	@echo "#endif // $(shell echo $@ | tr / _ | tr . _ | tr a-z A-Z)_H" >> $@
 
-$(JSON_HEADER): $(JSON_HEADERS)
+$(JSON_HEADER): $(JSON_HEADERS) $(VALIJSON_HEADER)
 	@echo "Generating JSON header"
 	@echo "#ifndef JSONS_HEADERS_HPP" > $@
 	@echo "#define JSONS_HEADERS_HPP" >> $@
@@ -46,7 +46,7 @@ $(JSON_HEADER): $(JSON_HEADERS)
 header: $(JSON_HEADER) $(VALIJSON_HEADER)
 
 $(VALIJSON_HEADER):
-	@git clone git@github.com:tristanpenman/valijson.git
+	@git clone https://github.com/tristanpenman/valijson.git
 	@cd valijson && git checkout v1.0.5
 	@cd valijson && ./bundle.sh nlohmann_json > valijson_nlohmann_bundled.hpp
 	@mv valijson/valijson_nlohmann_bundled.hpp $(VALIJSON_HEADER)
