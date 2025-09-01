@@ -2,3 +2,4 @@
 -I.
 -I./include
 -I./src
+-I./src/v16/schemas

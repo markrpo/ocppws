@@ -3,6 +3,7 @@
 
 #include <string>
 #include <functional>
+#include <iostream>
 #include "iwebsocket.hpp"
 #include "responses.hpp"
 
@@ -12,8 +13,6 @@ using onDisconnectCallback = std::function<void(const std::string&)>;
 
 class IOCPPServer : public OcppObserver
 {
-
-	
 public:
 
 	using UserCallback = std::function<std::string(const std::string&)>; 			// using is a keyword to create an alias (like typedef)
@@ -24,5 +23,6 @@ public:
 	virtual void add_on_disconnect_callback(onDisconnectCallback callback) = 0;
 
 };
+
 
 #endif

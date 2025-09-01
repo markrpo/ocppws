@@ -4,6 +4,10 @@
 #build
 build
 build/*
+src/v16/schemas/*.hpp
+src/jsons_headers.hpp
+src/jsons_header.hpp
+src/valijson*
 
 # Compiled Object files
 *.slo

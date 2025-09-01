@@ -19,11 +19,9 @@ jobs:
           sudo apt-get update
           sudo make bootstrap_lib
 
-      - name: Build with CMake
+      - name: Build with Make
         run: |
-          mkdir build
-          cd build
-          cmake ..
+          cd src
           make
 
       - name: Set status
