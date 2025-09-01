@@ -13,8 +13,6 @@ using onDisconnectCallback = std::function<void(const std::string&)>;
 
 class IOCPPServer : public OcppObserver
 {
-
-	
 public:
 
 	using UserCallback = std::function<std::string(const std::string&)>; 			// using is a keyword to create an alias (like typedef)
@@ -26,25 +24,5 @@ public:
 
 };
 
-class OcppJsons
-{
-public:
-	static std::string bootNotificationRequest();
-	static std::string bootNotificationResponse();
-	static std::string heartbeatRequest();
-	static std::string heartbeatResponse();
-	static std::string statusNotificationRequest();
-	static std::string statusNotificationResponse();
-	static std::string authorizeRequest();
-	static std::string authorizeResponse();
-	static std::string startTransactionRequest();
-	static std::string startTransactionResponse();
-	static std::string stopTransactionRequest();
-	static std::string stopTransactionResponse();
-	static std::string meterValuesRequest();
-	static std::string meterValuesResponse();
-	static std::string dataTransferRequest();
-	static std::string dataTransferResponse();
-};
 
 #endif

@@ -43,6 +43,7 @@ private:
 	std::map<std::string, Handler> handlers;
 	std::string generic_handler(const std::string& message, json& j);
 
+
 	onConnectCallbackOld old_on_connect_callback = nullptr;
 	onConnectCallback on_connect_callback = nullptr;
 	onDisconnectCallback on_disconnect_callback = nullptr;
@@ -51,6 +52,10 @@ private:
 
 	std::string process_message(std::string& message, size_t len);
 	bool get_json(const std::string& message, json& j);
+	bool validate_json(const json& message, const json& schema);
+	void make_call_error(const std::string& id, const std::string& error_code, const std::string& error_description, json& response_json);
+	void make_call_result(const std::string& id, const json& result, json& response_json);
+	void addZTimestamp(json& payload);
 	void init_handlers();
 };
 

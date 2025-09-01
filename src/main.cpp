@@ -5,7 +5,6 @@
 
 
 int main() {
-	std::cout << "Heartbeat Response: " << OcppJsons::heartbeatResponse() << std::endl;
 	std::string path = "/";
 	WebSocketServer server(9000, path);
 	OCPPServer ocpp(&server);
